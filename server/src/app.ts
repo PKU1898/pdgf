@@ -19,8 +19,16 @@ app.get("/api/health", (_req, res) => {
 });
 
 // 启动服务
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+});
+
+server.on("error", (err: NodeJS.ErrnoException) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(`端口 ${PORT} 已被占用，请更换端口或关闭占用该端口的进程`);
+    process.exit(1);
+  }
+  throw err;
 });
 
 export default app;
