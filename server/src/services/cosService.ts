@@ -4,7 +4,11 @@ import path from "node:path";
 const ALLOWED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp"] as const;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
-function createClient(): COS {
+let client: COS | null = null;
+
+function getClient(): COS {
+  if (client) return client;
+
   const SecretId = process.env.COS_SECRET_ID;
   const SecretKey = process.env.COS_SECRET_KEY;
 
@@ -12,7 +16,8 @@ function createClient(): COS {
     throw new Error("COS_SECRET_ID and COS_SECRET_KEY must be configured in .env");
   }
 
-  return new COS({ SecretId, SecretKey });
+  client = new COS({ SecretId, SecretKey });
+  return client;
 }
 
 function validateFile(filePath: string, buffer: Buffer): void {
@@ -37,7 +42,7 @@ export async function uploadImage(buffer: Buffer, filePath: string): Promise<str
     throw new Error("COS_BUCKET and COS_REGION must be configured in .env");
   }
 
-  const cos = createClient();
+  const cos = getClient();
 
   const result = await cos.putObject({
     Bucket,
