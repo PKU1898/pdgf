@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String      @id @default(cuid())
+  openId        String      @unique
+  phone         String?     @unique
+  nickname      String?
+  avatarUrl     String?
+  vipStatus     Int         @default(0)
+  currentBrand  String      @default("mard")
+  projects      Project[]
+  inventories   Inventory[]
+  createdAt     DateTime    @default(now())
+
+  @@map("users")
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  width       Int
+  height      Int
+  brand       String
+  gridData    Json
+  isTemplate  Boolean  @default(false)
+  user        User     @relation(fields: [userId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+  @@map("projects")
+}
+
+model BeadColor {
+  id       String  @id
+  brand    String
+  code     String
+  hexCode  String
+  rgb      String
+  name     String?
+
+  @@unique([brand, code])
+  @@map("bead_colors")
+}
+
+model Inventory {
+  id       String @id @default(cuid())
+  userId   String
+  colorId  String
+  quantity Int
+  user     User   @relation(fields: [userId], references: [id])
+
+  @@unique([userId, colorId])
+  @@index([userId])
+  @@map("inventories")
+}
+
+model ExportTask {
+  id        String   @id @default(cuid())
+  userId    String
+  projectId String
+  format    String
+  status    String   @default("pending")
+  url       String?
+  createdAt DateTime @default(now())
+
+  @@map("export_tasks")
+}
+
+model ColorMapping {
+  id            String @id @default(cuid())
+  originalHex   String
+  mappedColorId String
+  distance      Float
+
+  @@map("color_mappings")
+}
