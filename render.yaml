@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: pdgf-server
+    runtime: node
+    region: singapore
+    plan: free
+    buildCommand: cd server && pnpm install --frozen-lockfile && npx prisma generate && npx prisma migrate deploy && pnpm build
+    startCommand: cd server && pnpm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pdgf-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: COS_SECRET_ID
+        sync: false
+      - key: COS_SECRET_KEY
+        sync: false
+      - key: COS_BUCKET
+        sync: false
+      - key: COS_REGION
+        sync: false
+
+databases:
+  - name: pdgf-db
+    plan: free
+    databaseName: pdgf
+    region: singapore
