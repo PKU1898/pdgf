@@ -1,11 +1,11 @@
 import express, { type Request, type Response } from "express";
 import { prisma } from "../lib/prisma.js";
+import { authMiddleware } from "../middleware/auth.js";
 import {
   code2Session,
   getAccessToken,
   getPhoneNumber,
   generateToken,
-  verifyToken,
 } from "../services/authService.js";
 
 const router: express.Router = express.Router();
@@ -55,23 +55,8 @@ router.post("/silent-login", async (req: Request, res: Response) => {
 });
 
 // POST /api/auth/bind-phone (需要 JWT 鉴权)
-router.post("/bind-phone", async (req: Request, res: Response) => {
+router.post("/bind-phone", authMiddleware, async (req: Request, res: Response) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      res.status(401).json({ code: 401, message: "未登录", data: null });
-      return;
-    }
-
-    const token = authHeader.slice(7);
-    let payload;
-    try {
-      payload = verifyToken(token);
-    } catch {
-      res.status(401).json({ code: 401, message: "Token 无效或已过期", data: null });
-      return;
-    }
-
     const { phoneCode } = req.body;
     if (!phoneCode || typeof phoneCode !== "string") {
       res.status(400).json({ code: 400, message: "缺少 phoneCode 参数", data: null });
@@ -82,7 +67,7 @@ router.post("/bind-phone", async (req: Request, res: Response) => {
     const phoneNumber = await getPhoneNumber(accessToken, phoneCode);
 
     const user = await prisma.user.update({
-      where: { id: payload.userId },
+      where: { id: req.body.userId },
       data: { phone: phoneNumber },
     });
 
