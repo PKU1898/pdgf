@@ -18,6 +18,10 @@ app.get("/api/health", (_req, res) => {
   res.json({ code: 200, message: "ok", data: null });
 });
 
+// 路由
+import authRoutes from "./routes/auth.js";
+app.use("/api/auth", authRoutes);
+
 // 启动服务
 const server = app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
