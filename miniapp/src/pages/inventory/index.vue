@@ -155,7 +155,7 @@ onMounted(() => {
           <text class="font-mono text-xs text-text-sub mt-1">{{ color.code }}</text>
           <input
             type="number"
-            :value="quantities[color.id] || ''"
+            :value="quantities[color.id] ?? ''"
             class="w-full h-8 text-center text-xs bg-bg rounded mt-1 border border-border-light"
             placeholder="0"
             @input="onQuantityInput(color.id, $event)"
