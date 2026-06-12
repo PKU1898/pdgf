@@ -39,6 +39,7 @@ model Project {
   @@map("projects")
 }
 
+// brand 字段：系统内置品牌（mard/coco），用户自定义色板格式 custom_{userId}_{paletteName}
 model BeadColor {
   id       String  @id
   brand    String
