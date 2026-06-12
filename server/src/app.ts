@@ -20,7 +20,9 @@ app.get("/api/health", (_req, res) => {
 
 // 路由
 import authRoutes from "./routes/auth.js";
+import beadRoutes from "./routes/bead.js";
 app.use("/api/auth", authRoutes);
+app.use("/api/bead", beadRoutes);
 
 // 启动服务
 const server = app.listen(PORT, () => {
