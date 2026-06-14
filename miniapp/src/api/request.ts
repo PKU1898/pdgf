@@ -96,6 +96,44 @@ export function silentLogin(): Promise<void> {
   });
 }
 
+export function uploadFile<T = unknown>(options: {
+  url: string;
+  filePath: string;
+  name?: string;
+  formData?: Record<string, string>;
+}): Promise<ApiResponse<T>> {
+  return new Promise((resolve, reject) => {
+    const authStore = useAuthStore();
+
+    uni.uploadFile({
+      url: `${BASE_URL}${options.url}`,
+      filePath: options.filePath,
+      name: options.name || "file",
+      formData: options.formData,
+      header: authStore.token ? { Authorization: `Bearer ${authStore.token}` } : {},
+      success: (res) => {
+        if (res.statusCode === 401) {
+          authStore.clearAuth();
+          silentLogin();
+          reject(new Error("登录已过期，请重新登录"));
+          return;
+        }
+
+        const data = JSON.parse(res.data) as ApiResponse<T>;
+
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve(data);
+        } else {
+          reject(new Error(data.message || "上传失败"));
+        }
+      },
+      fail: (err) => {
+        reject(new Error(err.errMsg || "网络错误"));
+      },
+    });
+  });
+}
+
 export function bindPhone(phoneCode: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const authStore = useAuthStore();
