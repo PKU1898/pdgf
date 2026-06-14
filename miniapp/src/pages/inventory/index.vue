@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
 import { request } from "../../api/request";
+import { useInventoryStore } from "../../store/inventory";
 
 interface BeadColor {
   id: string;
@@ -15,10 +16,11 @@ interface GroupedColors {
   [brand: string]: BeadColor[];
 }
 
+const inventoryStore = useInventoryStore();
+
 const brands = ref<string[]>([]);
 const activeBrand = ref("mard");
 const colors = ref<BeadColor[]>([]);
-const quantities = ref<Record<string, number>>({});
 const loading = ref(true);
 const loadError = ref(false);
 
@@ -36,13 +38,8 @@ function getBrandLabel(brand: string): string {
   return brand;
 }
 
-const selectedCount = computed(() => {
-  return Object.values(quantities.value).filter((q) => q > 0).length;
-});
-
-const totalCount = computed(() => {
-  return Object.values(quantities.value).reduce((sum, q) => sum + q, 0);
-});
+const selectedCount = computed(() => inventoryStore.selectedCount);
+const totalCount = computed(() => inventoryStore.totalCount);
 
 async function loadColors() {
   loading.value = true;
@@ -75,34 +72,25 @@ function switchBrand(brand: string, grouped?: GroupedColors) {
   if (grouped) {
     colors.value = grouped[brand] || [];
   }
-
-  const newQuantities: Record<string, number> = {};
-  for (const color of colors.value) {
-    newQuantities[color.id] = quantities.value[color.id] || 0;
-  }
-  quantities.value = newQuantities;
 }
 
 function onQuantityInput(colorId: string, event: unknown) {
   const detail = (event as { detail?: { value?: string } }).detail;
   const raw = detail?.value ?? "";
-  let val = parseInt(raw, 10);
-  if (isNaN(val) || val < 0) val = 0;
-  if (val > 9999) val = 9999;
-  quantities.value = { ...quantities.value, [colorId]: val };
+  const val = parseInt(raw, 10);
+  inventoryStore.updateQuantity(colorId, val);
 }
 
 function showToast(msg: string) {
   uni.showToast({ title: msg, icon: "none" });
 }
 
-function handleSync() {
-  // task-014 实现同步逻辑
-  uni.showToast({ title: "同步功能开发中", icon: "none" });
+async function handleSync() {
+  await inventoryStore.syncToCloud();
 }
 
-onMounted(() => {
-  loadColors();
+onMounted(async () => {
+  await Promise.all([loadColors(), inventoryStore.loadFromCloud()]);
 });
 </script>
 
@@ -155,7 +143,7 @@ onMounted(() => {
           <text class="font-mono text-xs text-text-sub mt-1">{{ color.code }}</text>
           <input
             type="number"
-            :value="quantities[color.id] ?? ''"
+            :value="inventoryStore.quantities[color.id] ?? ''"
             class="w-full h-8 text-center text-xs bg-bg rounded mt-1 border border-border-light"
             placeholder="0"
             @input="onQuantityInput(color.id, $event)"
@@ -172,7 +160,13 @@ onMounted(() => {
     <!-- 底部悬浮统计栏 -->
     <view class="fixed bottom-0 left-0 right-0 bg-card shadow-[0_-2px_10px_rgba(0,0,0,0.05)] px-page-x py-3 flex items-center justify-between z-50">
       <text class="text-text-main text-sm">已选{{ selectedCount }}种，共{{ totalCount }}颗</text>
-      <view class="px-6 py-2 bg-primary text-white rounded-btn text-sm" @tap="handleSync">一键同步</view>
+      <view
+        class="px-6 py-2 text-white rounded-btn text-sm"
+        :class="inventoryStore.syncing ? 'bg-text-sub' : 'bg-primary'"
+        @tap="handleSync"
+      >
+        {{ inventoryStore.syncing ? "同步中..." : "一键同步" }}
+      </view>
     </view>
   </view>
 </template>
