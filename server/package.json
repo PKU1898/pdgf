@@ -25,6 +25,7 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
+    "multer": "file:D:/software/env/multer/node_modules/multer",
     "pg": "^8.21.0",
     "prisma": "^7.8.0",
     "sharp": "file:D:/software/env/sharp/node_modules/sharp"
@@ -33,6 +34,7 @@
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "file:D:/software/env/multer/node_modules/@types/multer",
     "@types/pg": "^8.20.0",
     "nodemon": "^3.1.14",
     "ts-node": "^10.9.2",

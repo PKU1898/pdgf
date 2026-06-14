@@ -22,9 +22,11 @@ app.get("/api/health", (_req, res) => {
 import authRoutes from "./routes/auth.js";
 import beadRoutes from "./routes/bead.js";
 import inventoryRoutes from "./routes/inventory.js";
+import projectRoutes from "./routes/project.js";
 app.use("/api/auth", authRoutes);
 app.use("/api/bead", beadRoutes);
 app.use("/api/inventory", inventoryRoutes);
+app.use("/api/project", projectRoutes);
 
 // 启动服务
 const server = app.listen(PORT, () => {
