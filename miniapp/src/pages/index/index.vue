@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
+import { onPullDownRefresh } from "@dcloudio/uni-app";
 import { request, uploadFile } from "../../api/request";
 
 interface RecentProject {
@@ -168,6 +169,17 @@ function formatTime(dateStr: string): string {
 onMounted(() => {
   loadRecentProjects();
 });
+
+onPullDownRefresh(async () => {
+  await loadRecentProjects();
+  uni.stopPullDownRefresh();
+});
+
+function openProject(projectId: string) {
+  uni.navigateTo({
+    url: `/pages/editor/index?projectId=${projectId}`,
+  });
+}
 </script>
 
 <template>
@@ -202,8 +214,11 @@ onMounted(() => {
           v-for="project in recentProjects"
           :key="project.id"
           class="inline-block mr-4 w-40"
+          @tap="openProject(project.id)"
         >
-          <view class="h-32 bg-card rounded-card shadow-sm mb-2" />
+          <view class="h-32 bg-card rounded-card shadow-sm mb-2 flex items-center justify-center">
+            <text class="text-4xl">🧩</text>
+          </view>
           <text class="font-medium text-sm truncate block">{{ project.name }}</text>
           <text class="text-xs text-text-sub">{{ formatTime(project.updatedAt) }}</text>
         </view>

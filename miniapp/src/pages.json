@@ -3,7 +3,8 @@
     {
       "path": "pages/index/index",
       "style": {
-        "navigationBarTitleText": "拼豆工坊"
+        "navigationBarTitleText": "拼豆工坊",
+        "enablePullDownRefresh": true
       }
     },
     {
