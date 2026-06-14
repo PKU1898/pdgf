@@ -26,7 +26,8 @@
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.21.0",
-    "prisma": "^7.8.0"
+    "prisma": "^7.8.0",
+    "sharp": "file:D:/software/env/sharp/node_modules/sharp"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
