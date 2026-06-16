@@ -1,6 +1,7 @@
 import { ref, computed } from "vue";
 import { defineStore } from "pinia";
 import { request } from "../api/request";
+import { floodFill } from "../utils/fillBucket";
 
 const RECENT_COLORS_KEY = "recent_colors";
 const MAX_RECENT = 5;
@@ -75,6 +76,14 @@ export const useProjectStore = defineStore("project", () => {
     newData[row] = newRow;
     gridData.value = newData;
     pushRecentColor(colorId);
+  }
+
+  function fillArea(row: number, col: number, fillColor: string): number {
+    const result = floodFill(gridData.value, row, col, fillColor);
+    if (!result) return 0;
+    gridData.value = result.grid;
+    pushRecentColor(fillColor);
+    return result.count;
   }
 
   async function loadProject(id: string): Promise<boolean> {

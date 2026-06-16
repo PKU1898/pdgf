@@ -28,6 +28,7 @@ const expanded = ref(false);
 const tools = [
   { id: "brush", icon: "🖌️", label: "画笔" },
   { id: "eraser", icon: "🧹", label: "橡皮" },
+  { id: "fill", icon: "💧", label: "填充" },
   { id: "palette", icon: "🎨", label: "色板" },
 ] as const;
 

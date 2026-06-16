@@ -36,6 +36,19 @@ function onCellClick(row: number, col: number): void {
     store.updateCell(row, col, "");
     return;
   }
+  if (activeTool.value === "fill") {
+    if (!currentColorId.value) {
+      uni.showToast({ title: "请先选择颜色", icon: "none" });
+      return;
+    }
+    const count = store.fillArea(row, col, currentColorId.value);
+    if (count > 0) {
+      uni.showToast({ title: `已填充 ${count} 颗`, icon: "none" });
+    } else {
+      uni.showToast({ title: "区域过大或颜色相同", icon: "none" });
+    }
+    return;
+  }
   pendingCell.value = { row, col };
   drawerRef.value?.openPalette();
 }
