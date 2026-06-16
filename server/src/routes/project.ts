@@ -1,5 +1,6 @@
 import express, { type Request, type Response } from "express";
 import multer from "multer";
+import { Prisma } from "../generated/prisma/client.js";
 import { prisma } from "../lib/prisma.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { uploadImage } from "../services/cosService.js";
@@ -152,6 +153,40 @@ router.get("/:id", authMiddleware, async (req: Request, res: Response) => {
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "获取图纸失败";
     console.error("[project/detail]", message);
+    res.status(500).json({ code: 500, message, data: null });
+  }
+});
+
+// PUT /api/project/:id
+router.put("/:id", authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = req.body.userId as string;
+    const id = req.params.id as string;
+    const { gridData, name } = req.body as { gridData?: unknown; name?: string };
+
+    const existing = await prisma.project.findFirst({
+      where: { id, userId },
+      select: { id: true },
+    });
+
+    if (!existing) {
+      res.status(403).json({ code: 3001, message: "无权修改此图纸", data: null });
+      return;
+    }
+
+    const data: Prisma.ProjectUpdateInput = {};
+    if (gridData !== undefined) data.gridData = gridData as Prisma.InputJsonValue;
+    if (name !== undefined) data.name = name;
+
+    const project = await prisma.project.update({
+      where: { id },
+      data,
+    });
+
+    res.json({ code: 200, message: "ok", data: { id: project.id } });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "保存图纸失败";
+    console.error("[project/update]", message);
     res.status(500).json({ code: 500, message, data: null });
   }
 });

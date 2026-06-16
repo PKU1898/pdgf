@@ -101,13 +101,17 @@ function onPaletteOpen(): void {
 function onPaletteClose(): void {
   pendingCell.value = null;
 }
+
+function onSave(): void {
+  store.saveProject(true);
+}
 </script>
 
 <template>
   <view class="min-h-screen bg-bg flex flex-col">
     <view class="flex items-center justify-between px-page-x py-2 bg-card border-b border-border-light">
       <text class="text-base font-bold text-text-main truncate flex-1 mr-4">{{ store.name || "图纸" }}</text>
-      <view class="flex gap-3">
+      <view class="flex gap-3 items-center">
         <view
           class="px-4 py-1.5 rounded-btn text-sm"
           :class="store.canUndo ? 'bg-bg text-text-main' : 'bg-bg/50 text-text-sub/50'"
@@ -121,6 +125,13 @@ function onPaletteClose(): void {
           @tap="store.canRedo && store.redo()"
         >
           <text>重做</text>
+        </view>
+        <view
+          class="px-4 py-1.5 rounded-btn text-sm"
+          :class="store.saving ? 'bg-primary/50 text-white' : 'bg-primary text-white'"
+          @tap="onSave"
+        >
+          <text>{{ store.saving ? "保存中..." : "保存" }}</text>
         </view>
       </view>
     </view>

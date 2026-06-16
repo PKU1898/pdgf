@@ -7,6 +7,8 @@ import { removeBackground } from "../utils/removeBackground";
 const RECENT_COLORS_KEY = "recent_colors";
 const MAX_RECENT = 5;
 const MAX_HISTORY = 50;
+const AUTO_SAVE_DELAY = 2000;
+const UNSAVED_KEY = "unsaved_project";
 
 interface BeadColor {
   id: string;
@@ -56,9 +58,81 @@ export const useProjectStore = defineStore("project", () => {
 
   const history = ref<string[]>([]);
   const currentIndex = ref(-1);
+  const saving = ref(false);
 
   const canUndo = computed(() => currentIndex.value > 0);
   const canRedo = computed(() => currentIndex.value < history.value.length - 1);
+
+  let autoSaveTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function scheduleAutoSave(): void {
+    if (autoSaveTimer) clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(() => {
+      autoSaveTimer = null;
+      saveProject(false);
+    }, AUTO_SAVE_DELAY);
+  }
+
+  async function saveProject(force: boolean = true): Promise<boolean> {
+    if (!projectId.value) return false;
+    if (saving.value) return false;
+
+    saving.value = true;
+    try {
+      await request({
+        url: `/project/${projectId.value}`,
+        method: "PUT",
+        data: { gridData: gridData.value },
+      });
+      clearUnsavedCache();
+      if (force) {
+        uni.showToast({ title: "保存成功", icon: "success" });
+      }
+      return true;
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "保存失败";
+      console.error("[project/save]", message);
+      cacheUnsavedData();
+      if (force) {
+        uni.showToast({ title: "保存失败，已缓存到本地", icon: "none" });
+      }
+      return false;
+    } finally {
+      saving.value = false;
+    }
+  }
+
+  function cacheUnsavedData(): void {
+    try {
+      uni.setStorageSync(UNSAVED_KEY, {
+        projectId: projectId.value,
+        gridData: gridData.value,
+        timestamp: Date.now(),
+      });
+    } catch {
+      // ignore
+    }
+  }
+
+  function clearUnsavedCache(): void {
+    try {
+      uni.removeStorageSync(UNSAVED_KEY);
+    } catch {
+      // ignore
+    }
+  }
+
+  function getUnsavedCache(): { projectId: string; gridData: string[][]; timestamp: number } | null {
+    try {
+      const raw = uni.getStorageSync(UNSAVED_KEY);
+      if (raw && typeof raw === "object" && "projectId" in raw) {
+        return raw as { projectId: string; gridData: string[][]; timestamp: number };
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
 
   function pushSnapshot(): void {
     const snapshot = JSON.stringify(gridData.value);
@@ -75,12 +149,14 @@ export const useProjectStore = defineStore("project", () => {
     if (!canUndo.value) return;
     currentIndex.value--;
     gridData.value = JSON.parse(history.value[currentIndex.value]);
+    scheduleAutoSave();
   }
 
   function redo(): void {
     if (!canRedo.value) return;
     currentIndex.value++;
     gridData.value = JSON.parse(history.value[currentIndex.value]);
+    scheduleAutoSave();
   }
 
   const colorMap = computed<Record<string, string>>(() => {
@@ -110,6 +186,7 @@ export const useProjectStore = defineStore("project", () => {
     newData[row] = newRow;
     gridData.value = newData;
     pushRecentColor(colorId);
+    scheduleAutoSave();
   }
 
   function fillArea(row: number, col: number, fillColor: string): number {
@@ -118,6 +195,7 @@ export const useProjectStore = defineStore("project", () => {
     pushSnapshot();
     gridData.value = result.grid;
     pushRecentColor(fillColor);
+    scheduleAutoSave();
     return result.count;
   }
 
@@ -126,6 +204,7 @@ export const useProjectStore = defineStore("project", () => {
     if (!result) return 0;
     pushSnapshot();
     gridData.value = result.grid;
+    scheduleAutoSave();
     return result.count;
   }
 
@@ -143,6 +222,23 @@ export const useProjectStore = defineStore("project", () => {
       history.value = [JSON.stringify(p.gridData)];
       currentIndex.value = 0;
       await loadColors(p.brand);
+
+      const cached = getUnsavedCache();
+      if (cached && cached.projectId === id) {
+        uni.showModal({
+          title: "恢复未保存的修改",
+          content: "检测到上次未保存的修改，是否恢复？",
+          success: (modalRes) => {
+            if (modalRes.confirm) {
+              gridData.value = cached.gridData;
+              history.value = [JSON.stringify(cached.gridData)];
+              currentIndex.value = 0;
+            }
+            clearUnsavedCache();
+          },
+        });
+      }
+
       return true;
     } catch (err: unknown) {
       console.error("[project/load]", err);
@@ -172,6 +268,7 @@ export const useProjectStore = defineStore("project", () => {
     colorMap,
     recentColors,
     loading,
+    saving,
     canUndo,
     canRedo,
     updateCell,
@@ -179,6 +276,7 @@ export const useProjectStore = defineStore("project", () => {
     removeBg,
     undo,
     redo,
+    saveProject,
     loadProject,
   };
 });
