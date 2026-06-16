@@ -15,6 +15,8 @@ const pendingCell = ref<{ row: number; col: number } | null>(null);
 const showSettings = ref(false);
 const settingsWidth = ref(0);
 const settingsHeight = ref(0);
+const showDenoise = ref(false);
+const denoiseStrength = ref(50);
 
 const drawerRef = ref<InstanceType<typeof ToolDrawer> | null>(null);
 
@@ -93,6 +95,11 @@ function onToolChange(tool: string): void {
     }
     return;
   }
+  if (tool === "denoise") {
+    denoiseStrength.value = 50;
+    showDenoise.value = true;
+    return;
+  }
   activeTool.value = activeTool.value === tool ? "" : tool;
   lastDrawKey.value = "";
 }
@@ -138,6 +145,24 @@ function onSettingsConfirm(): void {
     store.resizeGrid(w, h);
     showSettings.value = false;
   }
+}
+
+function onDenoiseConfirm(): void {
+  const count = store.denoise(denoiseStrength.value);
+  if (count > 0) {
+    uni.showToast({ title: `已清理 ${count} 颗噪点`, icon: "none" });
+  } else {
+    uni.showToast({ title: "未检测到噪点", icon: "none" });
+  }
+  showDenoise.value = false;
+}
+
+function closeDenoise(): void {
+  showDenoise.value = false;
+}
+
+function onDenoiseSliderChange(e: { detail: { value: number } }): void {
+  denoiseStrength.value = e.detail.value;
 }
 </script>
 
@@ -232,6 +257,37 @@ function onSettingsConfirm(): void {
             <text class="text-sm text-text-sub">取消</text>
           </view>
           <view class="flex-1 py-2 rounded-btn bg-primary text-center" @tap="onSettingsConfirm">
+            <text class="text-sm text-white">确认</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view v-if="showDenoise" class="fixed inset-0 z-50 flex items-center justify-center">
+      <view class="absolute inset-0 bg-black/40" @tap="closeDenoise" />
+      <view class="relative bg-card rounded-panel p-5 mx-8 w-full max-w-sm shadow-lg">
+        <text class="text-lg font-bold text-text-main mb-4 block">像素去噪</text>
+
+        <view class="mb-4">
+          <view class="flex justify-between items-center mb-2">
+            <text class="text-sm text-text-sub">强度</text>
+            <text class="text-sm text-text-main font-mono">{{ denoiseStrength }}</text>
+          </view>
+          <slider
+            :value="denoiseStrength"
+            :min="1"
+            :max="100"
+            :step="1"
+            activeColor="#07C160"
+            @change="onDenoiseSliderChange"
+          />
+        </view>
+
+        <view class="flex gap-3">
+          <view class="flex-1 py-2 rounded-btn bg-bg text-center" @tap="closeDenoise">
+            <text class="text-sm text-text-sub">取消</text>
+          </view>
+          <view class="flex-1 py-2 rounded-btn bg-primary text-center" @tap="onDenoiseConfirm">
             <text class="text-sm text-white">确认</text>
           </view>
         </view>

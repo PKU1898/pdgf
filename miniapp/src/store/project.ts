@@ -3,6 +3,7 @@ import { defineStore } from "pinia";
 import { request } from "../api/request";
 import { floodFill } from "../utils/fillBucket";
 import { removeBackground } from "../utils/removeBackground";
+import { denoiseGrid } from "../utils/denoise";
 
 const RECENT_COLORS_KEY = "recent_colors";
 const MAX_RECENT = 5;
@@ -208,6 +209,15 @@ export const useProjectStore = defineStore("project", () => {
     return result.count;
   }
 
+  function denoise(strength: number): number {
+    const result = denoiseGrid(gridData.value, strength);
+    if (!result) return 0;
+    pushSnapshot();
+    gridData.value = result.grid;
+    scheduleAutoSave();
+    return result.count;
+  }
+
   async function loadProject(id: string): Promise<boolean> {
     loading.value = true;
     try {
@@ -303,6 +313,7 @@ export const useProjectStore = defineStore("project", () => {
     updateCell,
     fillArea,
     removeBg,
+    denoise,
     undo,
     redo,
     saveProject,
