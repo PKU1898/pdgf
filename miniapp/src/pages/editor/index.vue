@@ -4,19 +4,16 @@ import { onLoad } from "@dcloudio/uni-app";
 import { useProjectStore } from "../../store/project";
 import CanvasViewport from "../../components/CanvasViewport.vue";
 import BeadGrid from "../../components/BeadGrid.vue";
-import MiniColorPalette from "../../components/MiniColorPalette.vue";
-import ToolBar from "../../components/ToolBar.vue";
+import ToolDrawer from "../../components/ToolDrawer.vue";
 
 const store = useProjectStore();
 
-const showPalette = ref(false);
-const selectedRow = ref(0);
-const selectedCol = ref(0);
 const currentColorId = ref("");
 const activeTool = ref("");
 const lastDrawKey = ref("");
+const pendingCell = ref<{ row: number; col: number } | null>(null);
 
-let loadLock = false;
+const drawerRef = ref<InstanceType<typeof ToolDrawer> | null>(null);
 
 const DRAW_THROTTLE_MS = 16;
 let lastDrawTime = 0;
@@ -29,12 +26,18 @@ onLoad((options) => {
 });
 
 function onCellClick(row: number, col: number): void {
-  if (loadLock) return;
-  if (activeTool.value) return;
-  selectedRow.value = row;
-  selectedCol.value = col;
-  currentColorId.value = store.gridData[row]?.[col] ?? "";
-  showPalette.value = true;
+  if (activeTool.value === "brush") {
+    if (currentColorId.value) {
+      store.updateCell(row, col, currentColorId.value);
+    }
+    return;
+  }
+  if (activeTool.value === "eraser") {
+    store.updateCell(row, col, "");
+    return;
+  }
+  pendingCell.value = { row, col };
+  drawerRef.value?.openPalette();
 }
 
 function onCellDraw(row: number, col: number): void {
@@ -56,22 +59,25 @@ function onCellDraw(row: number, col: number): void {
 }
 
 function onColorSelect(colorId: string): void {
-  loadLock = true;
   currentColorId.value = colorId;
-  if (activeTool.value === "brush") {
-    store.updateCell(selectedRow.value, selectedCol.value, colorId);
+  if (pendingCell.value) {
+    store.updateCell(pendingCell.value.row, pendingCell.value.col, colorId);
+    pendingCell.value = null;
   }
-  showPalette.value = false;
-  setTimeout(() => { loadLock = false; }, 100);
-}
-
-function onClosePalette(): void {
-  showPalette.value = false;
+  drawerRef.value?.closePalette();
 }
 
 function onToolChange(tool: string): void {
   activeTool.value = activeTool.value === tool ? "" : tool;
   lastDrawKey.value = "";
+}
+
+function onPaletteOpen(): void {
+  // drawer opened
+}
+
+function onPaletteClose(): void {
+  pendingCell.value = null;
 }
 </script>
 
@@ -93,16 +99,17 @@ function onToolChange(tool: string): void {
       <text class="text-white text-sm">加载中...</text>
     </view>
 
-    <ToolBar :active-tool="activeTool" @tool-change="onToolChange" />
-
-    <MiniColorPalette
-      v-if="showPalette"
+    <ToolDrawer
+      ref="drawerRef"
+      :active-tool="activeTool"
+      :current-color-id="currentColorId"
       :recent-colors="store.recentColors"
       :colors="store.colors"
       :color-map="store.colorMap"
-      :selected-color-id="currentColorId"
-      @select="onColorSelect"
-      @close="onClosePalette"
+      @tool-change="onToolChange"
+      @color-select="onColorSelect"
+      @palette-open="onPaletteOpen"
+      @palette-close="onPaletteClose"
     />
   </view>
 </template>
