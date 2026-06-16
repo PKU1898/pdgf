@@ -4,10 +4,12 @@ import { computed } from "vue";
 const props = defineProps<{
   gridData: string[][];
   colorMap: Record<string, string>;
+  drawing?: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: "cell-click", row: number, col: number): void;
+  (e: "cell-draw", row: number, col: number): void;
 }>();
 
 const width = computed(() => {
@@ -25,6 +27,20 @@ const gridStyle = computed(() => ({
 function getCellColor(colorId: string): string {
   return props.colorMap[colorId] || "#F6F6F6";
 }
+
+function onCellTouchStart(row: number, col: number, e: TouchEvent): void {
+  if (props.drawing) {
+    e.preventDefault();
+    emit("cell-draw", row, col);
+  }
+}
+
+function onCellTouchMove(row: number, col: number, e: TouchEvent): void {
+  if (props.drawing) {
+    e.preventDefault();
+    emit("cell-draw", row, col);
+  }
+}
 </script>
 
 <template>
@@ -39,7 +55,11 @@ function getCellColor(colorId: string): string {
         :key="`${rowIdx}-${colIdx}`"
         class="aspect-square"
         :style="{ backgroundColor: getCellColor(colorId) }"
-        @tap="emit('cell-click', rowIdx, colIdx)"
+        :data-row="rowIdx"
+        :data-col="colIdx"
+        @tap="!drawing && emit('cell-click', rowIdx, colIdx)"
+        @touchstart="onCellTouchStart(rowIdx, colIdx, $event)"
+        @touchmove="onCellTouchMove(rowIdx, colIdx, $event)"
       />
     </view>
   </view>
