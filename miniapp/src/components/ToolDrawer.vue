@@ -29,6 +29,7 @@ const tools = [
   { id: "brush", icon: "🖌️", label: "画笔" },
   { id: "eraser", icon: "🧹", label: "橡皮" },
   { id: "fill", icon: "💧", label: "填充" },
+  { id: "removeBg", icon: "🖼️", label: "去背景" },
   { id: "palette", icon: "🎨", label: "色板" },
 ] as const;
 

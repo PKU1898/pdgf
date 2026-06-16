@@ -2,6 +2,7 @@ import { ref, computed } from "vue";
 import { defineStore } from "pinia";
 import { request } from "../api/request";
 import { floodFill } from "../utils/fillBucket";
+import { removeBackground } from "../utils/removeBackground";
 
 const RECENT_COLORS_KEY = "recent_colors";
 const MAX_RECENT = 5;
@@ -86,6 +87,13 @@ export const useProjectStore = defineStore("project", () => {
     return result.count;
   }
 
+  function removeBg(): number {
+    const result = removeBackground(gridData.value, colorMap.value);
+    if (!result) return 0;
+    gridData.value = result.grid;
+    return result.count;
+  }
+
   async function loadProject(id: string): Promise<boolean> {
     loading.value = true;
     try {
@@ -128,6 +136,8 @@ export const useProjectStore = defineStore("project", () => {
     recentColors,
     loading,
     updateCell,
+    fillArea,
+    removeBg,
     loadProject,
   };
 });

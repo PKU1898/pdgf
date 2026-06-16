@@ -81,6 +81,15 @@ function onColorSelect(colorId: string): void {
 }
 
 function onToolChange(tool: string): void {
+  if (tool === "removeBg") {
+    const count = store.removeBg();
+    if (count > 0) {
+      uni.showToast({ title: `已清除 ${count} 颗背景`, icon: "none" });
+    } else {
+      uni.showToast({ title: "未检测到纯色背景", icon: "none" });
+    }
+    return;
+  }
   activeTool.value = activeTool.value === tool ? "" : tool;
   lastDrawKey.value = "";
 }
