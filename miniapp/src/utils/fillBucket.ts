@@ -21,9 +21,10 @@ export function floodFill(
   visited.add(`${startRow},${startCol}`);
 
   const dirs: [number, number][] = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+  let head = 0;
 
-  while (queue.length > 0) {
-    const [r, c] = queue.shift()!;
+  while (head < queue.length) {
+    const [r, c] = queue[head++];
     positions.push([r, c]);
 
     if (positions.length > maxCount) return null;

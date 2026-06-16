@@ -157,6 +157,13 @@ router.get("/:id", authMiddleware, async (req: Request, res: Response) => {
   }
 });
 
+function isValidGridData(data: unknown): data is string[][] {
+  if (!Array.isArray(data)) return false;
+  return data.every(
+    (row) => Array.isArray(row) && row.every((cell) => typeof cell === "string")
+  );
+}
+
 // PUT /api/project/:id
 router.put("/:id", authMiddleware, async (req: Request, res: Response) => {
   try {
@@ -175,7 +182,13 @@ router.put("/:id", authMiddleware, async (req: Request, res: Response) => {
     }
 
     const data: Prisma.ProjectUpdateInput = {};
-    if (gridData !== undefined) data.gridData = gridData as Prisma.InputJsonValue;
+    if (gridData !== undefined) {
+      if (!isValidGridData(gridData)) {
+        res.status(400).json({ code: 400, message: "gridData 格式无效", data: null });
+        return;
+      }
+      data.gridData = gridData as Prisma.InputJsonValue;
+    }
     if (name !== undefined) data.name = name;
 
     const project = await prisma.project.update({
