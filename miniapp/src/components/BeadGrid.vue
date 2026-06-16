@@ -6,6 +6,10 @@ const props = defineProps<{
   colorMap: Record<string, string>;
 }>();
 
+const emit = defineEmits<{
+  (e: "cell-click", row: number, col: number): void;
+}>();
+
 const width = computed(() => {
   if (props.gridData.length === 0) return 0;
   return props.gridData[0].length;
@@ -35,6 +39,7 @@ function getCellColor(colorId: string): string {
         :key="`${rowIdx}-${colIdx}`"
         class="aspect-square"
         :style="{ backgroundColor: getCellColor(colorId) }"
+        @tap="emit('cell-click', rowIdx, colIdx)"
       />
     </view>
   </view>
