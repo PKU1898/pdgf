@@ -248,6 +248,35 @@ export const useProjectStore = defineStore("project", () => {
     }
   }
 
+  function resizeGrid(newWidth: number, newHeight: number): boolean {
+    const w = Math.max(10, Math.min(200, Math.round(newWidth)));
+    const h = Math.max(10, Math.min(200, Math.round(newHeight)));
+    if (w === width.value && h === height.value) return false;
+
+    pushSnapshot();
+    const oldGrid = gridData.value;
+    const newGrid: string[][] = [];
+
+    for (let r = 0; r < h; r++) {
+      if (r < oldGrid.length) {
+        const oldRow = oldGrid[r];
+        const newRow: string[] = [];
+        for (let c = 0; c < w; c++) {
+          newRow.push(c < oldRow.length ? oldRow[c] : "");
+        }
+        newGrid.push(newRow);
+      } else {
+        newGrid.push(new Array(w).fill(""));
+      }
+    }
+
+    gridData.value = newGrid;
+    width.value = w;
+    height.value = h;
+    scheduleAutoSave();
+    return true;
+  }
+
   async function loadColors(b: string): Promise<void> {
     try {
       const res = await request<BeadColor[]>({ url: `/bead/colors?brand=${b}` });
@@ -277,6 +306,7 @@ export const useProjectStore = defineStore("project", () => {
     undo,
     redo,
     saveProject,
+    resizeGrid,
     loadProject,
   };
 });

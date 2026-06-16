@@ -12,6 +12,9 @@ const currentColorId = ref("");
 const activeTool = ref("");
 const lastDrawKey = ref("");
 const pendingCell = ref<{ row: number; col: number } | null>(null);
+const showSettings = ref(false);
+const settingsWidth = ref(0);
+const settingsHeight = ref(0);
 
 const drawerRef = ref<InstanceType<typeof ToolDrawer> | null>(null);
 
@@ -105,6 +108,37 @@ function onPaletteClose(): void {
 function onSave(): void {
   store.saveProject(true);
 }
+
+function openSettings(): void {
+  settingsWidth.value = store.width;
+  settingsHeight.value = store.height;
+  showSettings.value = true;
+}
+
+function closeSettings(): void {
+  showSettings.value = false;
+}
+
+function onSettingsConfirm(): void {
+  const w = Math.max(10, Math.min(200, Math.round(settingsWidth.value)));
+  const h = Math.max(10, Math.min(200, Math.round(settingsHeight.value)));
+
+  if (w < store.width || h < store.height) {
+    uni.showModal({
+      title: "缩小画布",
+      content: "边缘内容可能丢失，是否继续？",
+      success: (res) => {
+        if (res.confirm) {
+          store.resizeGrid(w, h);
+          showSettings.value = false;
+        }
+      },
+    });
+  } else {
+    store.resizeGrid(w, h);
+    showSettings.value = false;
+  }
+}
 </script>
 
 <template>
@@ -132,6 +166,9 @@ function onSave(): void {
           @tap="onSave"
         >
           <text>{{ store.saving ? "保存中..." : "保存" }}</text>
+        </view>
+        <view class="px-3 py-1.5 rounded-btn text-sm bg-bg text-text-main" @tap="openSettings">
+          <text>⚙️</text>
         </view>
       </view>
     </view>
@@ -164,5 +201,41 @@ function onSave(): void {
       @palette-open="onPaletteOpen"
       @palette-close="onPaletteClose"
     />
+
+    <view v-if="showSettings" class="fixed inset-0 z-50 flex items-center justify-center">
+      <view class="absolute inset-0 bg-black/40" @tap="closeSettings" />
+      <view class="relative bg-card rounded-panel p-5 mx-8 w-full max-w-sm shadow-lg">
+        <text class="text-lg font-bold text-text-main mb-4 block">画板设置</text>
+
+        <view class="mb-3">
+          <text class="text-sm text-text-sub mb-1 block">宽度（10-200）</text>
+          <input
+            v-model="settingsWidth"
+            type="number"
+            class="bg-bg rounded-btn px-3 py-2 text-sm text-text-main w-full"
+            :maxlength="3"
+          />
+        </view>
+
+        <view class="mb-4">
+          <text class="text-sm text-text-sub mb-1 block">高度（10-200）</text>
+          <input
+            v-model="settingsHeight"
+            type="number"
+            class="bg-bg rounded-btn px-3 py-2 text-sm text-text-main w-full"
+            :maxlength="3"
+          />
+        </view>
+
+        <view class="flex gap-3">
+          <view class="flex-1 py-2 rounded-btn bg-bg text-center" @tap="closeSettings">
+            <text class="text-sm text-text-sub">取消</text>
+          </view>
+          <view class="flex-1 py-2 rounded-btn bg-primary text-center" @tap="onSettingsConfirm">
+            <text class="text-sm text-white">确认</text>
+          </view>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
