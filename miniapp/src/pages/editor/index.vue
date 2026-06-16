@@ -105,6 +105,26 @@ function onPaletteClose(): void {
 
 <template>
   <view class="min-h-screen bg-bg flex flex-col">
+    <view class="flex items-center justify-between px-page-x py-2 bg-card border-b border-border-light">
+      <text class="text-base font-bold text-text-main truncate flex-1 mr-4">{{ store.name || "图纸" }}</text>
+      <view class="flex gap-3">
+        <view
+          class="px-4 py-1.5 rounded-btn text-sm"
+          :class="store.canUndo ? 'bg-bg text-text-main' : 'bg-bg/50 text-text-sub/50'"
+          @tap="store.canUndo && store.undo()"
+        >
+          <text>撤销</text>
+        </view>
+        <view
+          class="px-4 py-1.5 rounded-btn text-sm"
+          :class="store.canRedo ? 'bg-bg text-text-main' : 'bg-bg/50 text-text-sub/50'"
+          @tap="store.canRedo && store.redo()"
+        >
+          <text>重做</text>
+        </view>
+      </view>
+    </view>
+
     <view class="flex-1 overflow-hidden">
       <CanvasViewport>
         <BeadGrid

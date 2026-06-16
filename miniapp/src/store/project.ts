@@ -6,6 +6,7 @@ import { removeBackground } from "../utils/removeBackground";
 
 const RECENT_COLORS_KEY = "recent_colors";
 const MAX_RECENT = 5;
+const MAX_HISTORY = 50;
 
 interface BeadColor {
   id: string;
@@ -53,6 +54,35 @@ export const useProjectStore = defineStore("project", () => {
   const recentColors = ref<string[]>(loadRecentColors());
   const loading = ref(false);
 
+  const history = ref<string[]>([]);
+  const currentIndex = ref(-1);
+
+  const canUndo = computed(() => currentIndex.value > 0);
+  const canRedo = computed(() => currentIndex.value < history.value.length - 1);
+
+  function pushSnapshot(): void {
+    const snapshot = JSON.stringify(gridData.value);
+    const trimmed = history.value.slice(0, currentIndex.value + 1);
+    trimmed.push(snapshot);
+    if (trimmed.length > MAX_HISTORY) {
+      trimmed.shift();
+    }
+    history.value = trimmed;
+    currentIndex.value = history.value.length - 1;
+  }
+
+  function undo(): void {
+    if (!canUndo.value) return;
+    currentIndex.value--;
+    gridData.value = JSON.parse(history.value[currentIndex.value]);
+  }
+
+  function redo(): void {
+    if (!canRedo.value) return;
+    currentIndex.value++;
+    gridData.value = JSON.parse(history.value[currentIndex.value]);
+  }
+
   const colorMap = computed<Record<string, string>>(() => {
     const map: Record<string, string> = {};
     for (const c of colors.value) {
@@ -71,6 +101,9 @@ export const useProjectStore = defineStore("project", () => {
   function updateCell(row: number, col: number, colorId: string): void {
     if (row < 0 || row >= gridData.value.length) return;
     if (col < 0 || col >= (gridData.value[0]?.length ?? 0)) return;
+    const current = gridData.value[row]?.[col];
+    if (current === colorId) return;
+    pushSnapshot();
     const newRow = [...gridData.value[row]];
     newRow[col] = colorId;
     const newData = [...gridData.value];
@@ -82,6 +115,7 @@ export const useProjectStore = defineStore("project", () => {
   function fillArea(row: number, col: number, fillColor: string): number {
     const result = floodFill(gridData.value, row, col, fillColor);
     if (!result) return 0;
+    pushSnapshot();
     gridData.value = result.grid;
     pushRecentColor(fillColor);
     return result.count;
@@ -90,6 +124,7 @@ export const useProjectStore = defineStore("project", () => {
   function removeBg(): number {
     const result = removeBackground(gridData.value, colorMap.value);
     if (!result) return 0;
+    pushSnapshot();
     gridData.value = result.grid;
     return result.count;
   }
@@ -105,6 +140,8 @@ export const useProjectStore = defineStore("project", () => {
       height.value = p.height;
       brand.value = p.brand;
       gridData.value = p.gridData;
+      history.value = [JSON.stringify(p.gridData)];
+      currentIndex.value = 0;
       await loadColors(p.brand);
       return true;
     } catch (err: unknown) {
@@ -135,9 +172,13 @@ export const useProjectStore = defineStore("project", () => {
     colorMap,
     recentColors,
     loading,
+    canUndo,
+    canRedo,
     updateCell,
     fillArea,
     removeBg,
+    undo,
+    redo,
     loadProject,
   };
 });
