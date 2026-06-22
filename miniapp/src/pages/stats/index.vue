@@ -3,6 +3,7 @@ import { ref, computed } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useProjectStore } from "../../store/project";
 import { useInventoryStore } from "../../store/inventory";
+import { countGridColors } from "../../utils/countGridColors";
 import type { Shortage } from "../../utils/inventoryMatch";
 
 const projectStore = useProjectStore();
@@ -16,34 +17,38 @@ interface ColorStat {
   colorId: string;
   hexCode: string;
   code: string;
+  name: string;
   count: number;
   inventoryQty: number;
   gap: number;
 }
 
 const colorStats = computed<ColorStat[]>(() => {
-  const counts = new Map<string, number>();
-  for (const row of projectStore.gridData) {
-    for (const cell of row) {
-      if (cell) {
-        counts.set(cell, (counts.get(cell) ?? 0) + 1);
-      }
-    }
+  const rawCounts = countGridColors(projectStore.gridData);
+
+  const nameMap = new Map<string, string>();
+  for (const c of projectStore.colors) {
+    nameMap.set(c.id, c.name ?? "");
   }
 
-  const stats: ColorStat[] = [];
-  for (const [colorId, count] of counts) {
-    const hexCode = projectStore.colorMap[colorId] ?? "#CCCCCC";
-    const code = colorId.split("_").pop() ?? colorId;
-    const inventoryQty = inventoryStore.quantities[colorId] ?? 0;
-    const shortage = shortages.value.find((s) => s.colorId === colorId);
+  return rawCounts.map((item) => {
+    const hexCode = projectStore.colorMap[item.colorId] ?? "#CCCCCC";
+    const code = item.colorId.split("_").pop() ?? item.colorId;
+    const name = nameMap.get(item.colorId) ?? "";
+    const inventoryQty = inventoryStore.quantities[item.colorId] ?? 0;
+    const shortage = shortages.value.find((s) => s.colorId === item.colorId);
     const gap = shortage?.gap ?? 0;
 
-    stats.push({ colorId, hexCode, code, count, inventoryQty, gap });
-  }
-
-  stats.sort((a, b) => b.count - a.count);
-  return stats;
+    return {
+      colorId: item.colorId,
+      hexCode,
+      code,
+      name,
+      count: item.count,
+      inventoryQty,
+      gap,
+    };
+  });
 });
 
 const totalBeads = computed(() =>
@@ -139,6 +144,7 @@ onLoad(() => {
           />
           <view class="flex-1 min-w-0">
             <text class="text-sm text-text-main font-mono block">{{ stat.code }}</text>
+            <text v-if="stat.name" class="text-xs text-text-sub block">{{ stat.name }}</text>
             <text v-if="useInventory" class="text-xs text-text-sub block">
               库存: {{ stat.inventoryQty }}
             </text>
