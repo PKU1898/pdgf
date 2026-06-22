@@ -1,6 +1,6 @@
 import express, { type Request, type Response } from "express";
 import { prisma } from "../lib/prisma.js";
-import { authMiddleware } from "../middleware/auth.js";
+import { authMiddleware, type AuthenticatedRequest } from "../middleware/auth.js";
 
 const router: express.Router = express.Router();
 
@@ -15,7 +15,7 @@ interface SyncItem {
 // GET /api/inventory
 router.get("/", authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = req.body.userId as string;
+    const userId = (req as AuthenticatedRequest).userId as string;
 
     const inventories = await prisma.inventory.findMany({
       where: { userId },
@@ -32,7 +32,7 @@ router.get("/", authMiddleware, async (req: Request, res: Response) => {
 // POST /api/inventory/sync
 router.post("/sync", authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = req.body.userId as string;
+    const userId = (req as AuthenticatedRequest).userId as string;
     const { items } = req.body as { items?: SyncItem[] };
 
     if (!Array.isArray(items)) {

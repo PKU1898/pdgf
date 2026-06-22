@@ -2,7 +2,7 @@ import express, { type Request, type Response } from "express";
 import multer from "multer";
 import { Prisma } from "../generated/prisma/client.js";
 import { prisma } from "../lib/prisma.js";
-import { authMiddleware } from "../middleware/auth.js";
+import { authMiddleware, type AuthenticatedRequest } from "../middleware/auth.js";
 import { uploadImage } from "../services/cosService.js";
 import { pixelateImage } from "../utils/pixelator.js";
 import { mapColors, type BeadColorInput } from "../utils/colorMapper.js";
@@ -28,7 +28,7 @@ router.post(
   upload.single("file"),
   async (req: Request, res: Response) => {
     try {
-      const userId = req.body.userId as string;
+      const userId = (req as AuthenticatedRequest).userId as string;
       const file = req.file;
       const { name, width: widthStr, height: heightStr, brand: brandRaw } = req.body as GenerateBody;
 
@@ -107,7 +107,7 @@ router.post(
 // GET /api/project/list?page=1
 router.get("/list", authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = req.body.userId as string;
+    const userId = (req as AuthenticatedRequest).userId as string;
     const page = Math.max(1, parseInt((req.query.page as string) ?? "1", 10));
     const pageSize = 20;
 
@@ -137,7 +137,7 @@ router.get("/list", authMiddleware, async (req: Request, res: Response) => {
 // GET /api/project/:id
 router.get("/:id", authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = req.body.userId as string;
+    const userId = (req as AuthenticatedRequest).userId as string;
     const id = req.params.id as string;
 
     const project = await prisma.project.findFirst({
@@ -167,7 +167,7 @@ function isValidGridData(data: unknown): data is string[][] {
 // PUT /api/project/:id
 router.put("/:id", authMiddleware, async (req: Request, res: Response) => {
   try {
-    const userId = req.body.userId as string;
+    const userId = (req as AuthenticatedRequest).userId as string;
     const id = req.params.id as string;
     const { gridData, name } = req.body as { gridData?: unknown; name?: string };
 

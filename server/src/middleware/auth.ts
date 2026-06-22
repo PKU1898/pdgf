@@ -1,12 +1,9 @@
 import { type Request, type Response, type NextFunction } from "express";
 import { verifyToken } from "../services/authService.js";
 
-interface AuthenticatedRequest extends Request {
-  body: {
-    userId?: string;
-    isPhoneVerified?: boolean;
-    [key: string]: unknown;
-  };
+export interface AuthenticatedRequest extends Request {
+  userId?: string;
+  isPhoneVerified?: boolean;
 }
 
 export function authMiddleware(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
@@ -21,8 +18,8 @@ export function authMiddleware(req: AuthenticatedRequest, res: Response, next: N
 
   try {
     const payload = verifyToken(token);
-    req.body.userId = payload.userId;
-    req.body.isPhoneVerified = payload.isPhoneVerified;
+    req.userId = payload.userId;
+    req.isPhoneVerified = payload.isPhoneVerified;
     next();
   } catch {
     res.status(401).json({ code: 401, message: "Token 无效或已过期", data: null });
@@ -30,7 +27,7 @@ export function authMiddleware(req: AuthenticatedRequest, res: Response, next: N
 }
 
 export function requirePhone(req: AuthenticatedRequest, res: Response, next: NextFunction): void {
-  if (!req.body.isPhoneVerified) {
+  if (!req.isPhoneVerified) {
     res.status(403).json({ code: 4031, message: "请先绑定手机号", data: null });
     return;
   }

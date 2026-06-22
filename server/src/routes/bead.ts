@@ -1,6 +1,6 @@
 import express, { type Request, type Response } from "express";
 import { prisma } from "../lib/prisma.js";
-import { authMiddleware } from "../middleware/auth.js";
+import { authMiddleware, type AuthenticatedRequest } from "../middleware/auth.js";
 
 const router: express.Router = express.Router();
 
@@ -8,7 +8,7 @@ const router: express.Router = express.Router();
 router.get("/colors", authMiddleware, async (req: Request, res: Response) => {
   try {
     const { brand } = req.query;
-    const userId = req.body.userId;
+    const userId = (req as AuthenticatedRequest).userId;
 
     if (brand && typeof brand === "string") {
       const colors = await prisma.beadColor.findMany({

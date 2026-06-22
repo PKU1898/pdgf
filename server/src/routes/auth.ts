@@ -1,6 +1,6 @@
 import express, { type Request, type Response } from "express";
 import { prisma } from "../lib/prisma.js";
-import { authMiddleware } from "../middleware/auth.js";
+import { authMiddleware, type AuthenticatedRequest } from "../middleware/auth.js";
 import {
   code2Session,
   getAccessToken,
@@ -67,7 +67,7 @@ router.post("/bind-phone", authMiddleware, async (req: Request, res: Response) =
     const phoneNumber = await getPhoneNumber(accessToken, phoneCode);
 
     const user = await prisma.user.update({
-      where: { id: req.body.userId },
+      where: { id: (req as AuthenticatedRequest).userId },
       data: { phone: phoneNumber },
     });
 
