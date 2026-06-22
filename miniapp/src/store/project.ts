@@ -5,6 +5,11 @@ import { floodFill } from "../utils/fillBucket";
 import { removeBackground } from "../utils/removeBackground";
 import { denoiseGrid } from "../utils/denoise";
 import { mergeGrid } from "../utils/merge";
+import {
+  matchInventoryColors,
+  type ColorInfo,
+  type Shortage,
+} from "../utils/inventoryMatch";
 
 const RECENT_COLORS_KEY = "recent_colors";
 const MAX_RECENT = 5;
@@ -228,6 +233,21 @@ export const useProjectStore = defineStore("project", () => {
     return result.count;
   }
 
+  function matchInventory(
+    inventory: Record<string, number>
+  ): Shortage[] | null {
+    const colorInfos: ColorInfo[] = colors.value.map((c) => ({
+      id: c.id,
+      rgb: c.rgb,
+    }));
+    const result = matchInventoryColors(gridData.value, colorInfos, inventory);
+    if (!result) return null;
+    pushSnapshot();
+    gridData.value = result.grid;
+    scheduleAutoSave();
+    return result.shortages;
+  }
+
   async function loadProject(id: string): Promise<boolean> {
     loading.value = true;
     try {
@@ -325,6 +345,7 @@ export const useProjectStore = defineStore("project", () => {
     removeBg,
     denoise,
     merge,
+    matchInventory,
     undo,
     redo,
     saveProject,
