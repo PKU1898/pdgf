@@ -17,6 +17,8 @@ const settingsWidth = ref(0);
 const settingsHeight = ref(0);
 const showDenoise = ref(false);
 const denoiseStrength = ref(50);
+const showMerge = ref(false);
+const mergeStrength = ref(50);
 
 const drawerRef = ref<InstanceType<typeof ToolDrawer> | null>(null);
 
@@ -100,6 +102,11 @@ function onToolChange(tool: string): void {
     showDenoise.value = true;
     return;
   }
+  if (tool === "merge") {
+    mergeStrength.value = 50;
+    showMerge.value = true;
+    return;
+  }
   activeTool.value = activeTool.value === tool ? "" : tool;
   lastDrawKey.value = "";
 }
@@ -163,6 +170,24 @@ function closeDenoise(): void {
 
 function onDenoiseSliderChange(e: { detail: { value: number } }): void {
   denoiseStrength.value = e.detail.value;
+}
+
+function onMergeConfirm(): void {
+  const count = store.merge(mergeStrength.value);
+  if (count > 0) {
+    uni.showToast({ title: `已融合 ${count} 颗色块`, icon: "none" });
+  } else {
+    uni.showToast({ title: "未检测到需要融合的色块", icon: "none" });
+  }
+  showMerge.value = false;
+}
+
+function closeMerge(): void {
+  showMerge.value = false;
+}
+
+function onMergeSliderChange(e: { detail: { value: number } }): void {
+  mergeStrength.value = e.detail.value;
 }
 </script>
 
@@ -288,6 +313,37 @@ function onDenoiseSliderChange(e: { detail: { value: number } }): void {
             <text class="text-sm text-text-sub">取消</text>
           </view>
           <view class="flex-1 py-2 rounded-btn bg-primary text-center" @tap="onDenoiseConfirm">
+            <text class="text-sm text-white">确认</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view v-if="showMerge" class="fixed inset-0 z-50 flex items-center justify-center">
+      <view class="absolute inset-0 bg-black/40" @tap="closeMerge" />
+      <view class="relative bg-card rounded-panel p-5 mx-8 w-full max-w-sm shadow-lg">
+        <text class="text-lg font-bold text-text-main mb-4 block">色块融合</text>
+
+        <view class="mb-4">
+          <view class="flex justify-between items-center mb-2">
+            <text class="text-sm text-text-sub">强度</text>
+            <text class="text-sm text-text-main font-mono">{{ mergeStrength }}</text>
+          </view>
+          <slider
+            :value="mergeStrength"
+            :min="1"
+            :max="100"
+            :step="1"
+            activeColor="#07C160"
+            @change="onMergeSliderChange"
+          />
+        </view>
+
+        <view class="flex gap-3">
+          <view class="flex-1 py-2 rounded-btn bg-bg text-center" @tap="closeMerge">
+            <text class="text-sm text-text-sub">取消</text>
+          </view>
+          <view class="flex-1 py-2 rounded-btn bg-primary text-center" @tap="onMergeConfirm">
             <text class="text-sm text-white">确认</text>
           </view>
         </view>

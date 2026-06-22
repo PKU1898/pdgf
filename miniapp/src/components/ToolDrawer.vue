@@ -31,6 +31,7 @@ const tools = [
   { id: "fill", icon: "💧", label: "填充" },
   { id: "removeBg", icon: "🖼️", label: "去背景" },
   { id: "denoise", icon: "✨", label: "去噪" },
+  { id: "merge", icon: "🔲", label: "融合" },
   { id: "palette", icon: "🎨", label: "色板" },
 ] as const;
 
