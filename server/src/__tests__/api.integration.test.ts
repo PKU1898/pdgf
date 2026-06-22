@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll, vi } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from "vitest";
 import request from "supertest";
 
 // ── 环境变量（vi.hoisted 保证在 ESM import 之前执行） ──
@@ -10,6 +10,7 @@ vi.hoisted(() => {
   process.env.PORT = "0";
   process.env.WX_APPID = "";
   process.env.WX_SECRET = "";
+  process.env.REMOVEBG_API_KEY = "test-removebg-key";
 });
 
 // 阻止 dotenv.config() 覆盖 vi.hoisted 设置的环境变量
@@ -78,6 +79,16 @@ vi.mock("../middleware/auth.js", async () => {
 import app from "../app.js";
 import { prisma } from "../lib/prisma.js";
 import { generateToken } from "../services/authService.js";
+
+// Mock 全局 fetch 用于 Remove.bg API 测试
+const mockFetch = vi.fn();
+vi.stubGlobal("fetch", mockFetch);
+vi.stubGlobal("FormData", class MockFormData {
+  append() {}
+});
+vi.stubGlobal("Blob", class MockBlob {
+  constructor(public parts: unknown[]) {}
+});
 
 // ── 测试数据 ──
 const TEST_USER_ID = "integration_test_user";
@@ -388,5 +399,104 @@ describe("PUT /api/project/:id", () => {
 
     expect(res.status).toBe(400);
     expect(res.body.message).toContain("gridData");
+  });
+});
+
+// ═══════════════════════════════════════════════════════
+// POST /api/tool/matting — AI 抠图
+// ═══════════════════════════════════════════════════════
+describe("POST /api/tool/matting", () => {
+  beforeEach(() => {
+    mockFetch.mockReset();
+  });
+
+  it("未携带 Token 返回 401", async () => {
+    const res = await request(app)
+      .post("/api/tool/matting")
+      .send({ imageBase64: Buffer.from("fake-image").toString("base64") });
+    expect(res.status).toBe(401);
+  });
+
+  it("缺少 imageBase64 返回 400", async () => {
+    const res = await request(app)
+      .post("/api/tool/matting")
+      .set("Authorization", `Bearer ${validToken}`)
+      .send({});
+    expect(res.status).toBe(400);
+    expect(res.body.message).toContain("图片");
+  });
+
+  it("图片超过 5MB 返回 400", async () => {
+    // 8MB base64 string decodes to ~6MB buffer
+    const largeBase64 = "A".repeat(8 * 1024 * 1024);
+    const res = await request(app)
+      .post("/api/tool/matting")
+      .set("Authorization", `Bearer ${validToken}`)
+      .send({ imageBase64: largeBase64 });
+    expect(res.status).toBe(400);
+    expect(res.body.message).toContain("5MB");
+  });
+
+  it("Remove.bg API 失败返回 502", async () => {
+    mockFetch.mockResolvedValue({
+      ok: false,
+      status: 402,
+      text: () => Promise.resolve("Insufficient credits"),
+    });
+
+    const fakeImage = Buffer.from("fake-image-data").toString("base64");
+    const res = await request(app)
+      .post("/api/tool/matting")
+      .set("Authorization", `Bearer ${validToken}`)
+      .send({ imageBase64: fakeImage });
+
+    expect(res.status).toBe(502);
+    expect(res.body.code).toBe(5002);
+    expect(res.body.message).toContain("抠图失败");
+  });
+
+  it("成功抠图返回 imageUrl 和 gridData", async () => {
+    // Mock Remove.bg 返回透明 PNG
+    const transparentPng = Buffer.from([0x89, 0x50, 0x4e, 0x47]); // PNG magic bytes
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      arrayBuffer: () => Promise.resolve(transparentPng.buffer),
+    });
+
+    const fakeImage = Buffer.from("fake-image-data").toString("base64");
+    const res = await request(app)
+      .post("/api/tool/matting")
+      .set("Authorization", `Bearer ${validToken}`)
+      .send({
+        imageBase64: fakeImage,
+        width: "10",
+        height: "10",
+        brand: "mard",
+      });
+
+    expect(res.status).toBe(200);
+    expect(res.body.code).toBe(200);
+    expect(res.body.data.imageUrl).toContain("cos");
+    expect(res.body.data.gridData).toBeDefined();
+    expect(Array.isArray(res.body.data.gridData)).toBe(true);
+  });
+
+  it("支持 data URL 前缀格式", async () => {
+    const transparentPng = Buffer.from([0x89, 0x50, 0x4e, 0x47]);
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      arrayBuffer: () => Promise.resolve(transparentPng.buffer),
+    });
+
+    const res = await request(app)
+      .post("/api/tool/matting")
+      .set("Authorization", `Bearer ${validToken}`)
+      .send({
+        imageBase64: "data:image/png;base64," + Buffer.from("fake").toString("base64"),
+      });
+
+    expect(res.status).toBe(200);
   });
 });

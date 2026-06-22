@@ -248,6 +248,12 @@ export const useProjectStore = defineStore("project", () => {
     return result.shortages;
   }
 
+  function replaceGrid(newGrid: string[][]): void {
+    pushSnapshot();
+    gridData.value = newGrid;
+    scheduleAutoSave();
+  }
+
   async function loadProject(id: string): Promise<boolean> {
     loading.value = true;
     try {
@@ -346,6 +352,7 @@ export const useProjectStore = defineStore("project", () => {
     denoise,
     merge,
     matchInventory,
+    replaceGrid,
     undo,
     redo,
     saveProject,

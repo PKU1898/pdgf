@@ -3,6 +3,7 @@ import { ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useProjectStore } from "../../store/project";
 import { confirmAndUnlock } from "../../utils/rewardAd";
+import { request } from "../../api/request";
 import CanvasViewport from "../../components/CanvasViewport.vue";
 import BeadGrid from "../../components/BeadGrid.vue";
 import ToolDrawer from "../../components/ToolDrawer.vue";
@@ -111,7 +112,7 @@ function onToolChange(tool: string): void {
   if (tool === "matting") {
     confirmAndUnlock().then((unlocked) => {
       if (unlocked) {
-        uni.showToast({ title: "AI 抠图功能即将上线", icon: "none" });
+        startMatting();
       }
     });
     return;
@@ -122,6 +123,63 @@ function onToolChange(tool: string): void {
 
 function onPaletteOpen(): void {
   // drawer opened
+}
+
+function startMatting(): void {
+  uni.chooseImage({
+    count: 1,
+    sizeType: ["compressed"],
+    success: (chooseRes) => {
+      const filePath = chooseRes.tempFilePaths[0];
+      if (!filePath) return;
+
+      uni.showLoading({ title: "AI 抠图中...", mask: true });
+
+      const fs = uni.getFileSystemManager();
+      fs.readFile({
+        filePath,
+        encoding: "base64",
+        success: (readRes) => {
+          const base64 = readRes.data as string;
+          if (!base64) {
+            uni.hideLoading();
+            uni.showToast({ title: "读取图片失败", icon: "none" });
+            return;
+          }
+
+          request<{ imageUrl: string; gridData?: string[][] }>({
+            url: "/tool/matting",
+            method: "POST",
+            data: {
+              imageBase64: base64,
+              width: String(store.width),
+              height: String(store.height),
+              brand: store.brand,
+            },
+          })
+            .then((res) => {
+              uni.hideLoading();
+              if (res.data.gridData) {
+                store.replaceGrid(res.data.gridData);
+                store.saveProject(true);
+                uni.showToast({ title: "抠图完成", icon: "success" });
+              } else {
+                uni.showToast({ title: "抠图成功但未生成图纸", icon: "none" });
+              }
+            })
+            .catch((err: unknown) => {
+              uni.hideLoading();
+              const msg = err instanceof Error ? err.message : "抠图失败";
+              uni.showToast({ title: msg, icon: "none" });
+            });
+        },
+        fail: () => {
+          uni.hideLoading();
+          uni.showToast({ title: "读取图片失败", icon: "none" });
+        },
+      });
+    },
+  });
 }
 
 function onPaletteClose(): void {
