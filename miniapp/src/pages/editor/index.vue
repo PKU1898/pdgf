@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useProjectStore } from "../../store/project";
+import { confirmAndUnlock } from "../../utils/rewardAd";
 import CanvasViewport from "../../components/CanvasViewport.vue";
 import BeadGrid from "../../components/BeadGrid.vue";
 import ToolDrawer from "../../components/ToolDrawer.vue";
@@ -105,6 +106,14 @@ function onToolChange(tool: string): void {
   if (tool === "merge") {
     mergeStrength.value = 50;
     showMerge.value = true;
+    return;
+  }
+  if (tool === "matting") {
+    confirmAndUnlock().then((unlocked) => {
+      if (unlocked) {
+        uni.showToast({ title: "AI 抠图功能即将上线", icon: "none" });
+      }
+    });
     return;
   }
   activeTool.value = activeTool.value === tool ? "" : tool;
