@@ -4,6 +4,7 @@ import { onLoad } from "@dcloudio/uni-app";
 import { useProjectStore } from "../../store/project";
 import { useInventoryStore } from "../../store/inventory";
 import { countGridColors } from "../../utils/countGridColors";
+import { exportPng, exportCsv } from "../../utils/exportFile";
 import type { Shortage } from "../../utils/inventoryMatch";
 
 const projectStore = useProjectStore();
@@ -89,6 +90,50 @@ function onToggleChange(e: { detail: { value: boolean } }): void {
   }
 }
 
+function onExportPng(): void {
+  if (colorStats.value.length === 0) {
+    uni.showToast({ title: "暂无数据可导出", icon: "none" });
+    return;
+  }
+
+  const colorCodes: Record<string, string> = {};
+  const colorNames: Record<string, string> = {};
+  for (const c of projectStore.colors) {
+    colorCodes[c.id] = c.code;
+    colorNames[c.id] = c.name ?? "";
+  }
+
+  exportPng(
+    {
+      gridData: projectStore.gridData,
+      colorMap: projectStore.colorMap,
+      colorCodes,
+    },
+    projectStore.name || "图纸"
+  );
+}
+
+function onExportCsv(): void {
+  if (colorStats.value.length === 0) {
+    uni.showToast({ title: "暂无数据可导出", icon: "none" });
+    return;
+  }
+
+  const colorCodes: Record<string, string> = {};
+  const colorNames: Record<string, string> = {};
+  for (const c of projectStore.colors) {
+    colorCodes[c.id] = c.code;
+    colorNames[c.id] = c.name ?? "";
+  }
+
+  exportCsv(
+    projectStore.name || "图纸",
+    projectStore.gridData,
+    colorCodes,
+    colorNames
+  );
+}
+
 onLoad(() => {
   inventoryStore.loadFromCloud();
 });
@@ -158,6 +203,19 @@ onLoad(() => {
               缺口: {{ stat.gap }}颗
             </text>
           </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 导出按钮 -->
+    <view v-if="colorStats.length > 0" class="bg-card mx-page-x mt-3 rounded-panel p-4">
+      <text class="text-sm font-bold text-text-main mb-3 block">导出</text>
+      <view class="flex gap-3">
+        <view class="flex-1 py-2.5 rounded-btn bg-primary text-center" @tap="onExportPng">
+          <text class="text-sm text-white">导出 PNG</text>
+        </view>
+        <view class="flex-1 py-2.5 rounded-btn bg-bg text-center" @tap="onExportCsv">
+          <text class="text-sm text-text-main">导出 CSV</text>
         </view>
       </view>
     </view>
