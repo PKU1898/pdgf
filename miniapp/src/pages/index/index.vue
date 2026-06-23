@@ -236,7 +236,7 @@ function openProject(projectId: string) {
     <!-- 创建图纸弹窗 -->
     <view v-if="showModal" class="fixed inset-0 z-50 flex flex-col justify-end">
       <!-- 遮罩 -->
-      <view class="absolute inset-0 bg-black/40" @tap="closeCreateModal" />
+      <view class="absolute inset-0 bg-black bg-opacity-40" @tap="closeCreateModal" />
       <!-- 弹窗内容 -->
       <view class="relative bg-card rounded-t-panel px-page-x py-6 pb-8 animate-slide-up">
         <!-- 标题栏 -->
@@ -258,7 +258,7 @@ function openProject(projectId: string) {
           </view>
           <view v-else class="relative">
             <image :src="selectedImage" mode="aspectFit" class="w-full h-32 rounded-card bg-bg" />
-            <view class="absolute top-1 right-1 w-6 h-6 bg-black/50 rounded-full flex items-center justify-center" @tap="selectedImage = ''">
+            <view class="absolute top-1 right-1 w-6 h-6 bg-black bg-opacity-50 rounded-full flex items-center justify-center" @tap="selectedImage = ''">
               <text class="text-white text-xs">✕</text>
             </view>
           </view>

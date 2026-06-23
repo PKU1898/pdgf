@@ -2,7 +2,7 @@
 import { onLaunch, onShow, onHide } from "@dcloudio/uni-app";
 import { silentLogin } from "./api/request";
 import { initRewardAd } from "./utils/rewardAd";
-import LoginModal from "./components/LoginModal.vue";
+import LoginModal from "./components/LoginModal/LoginModal.vue";
 
 onLaunch(() => {
   silentLogin().catch((err) => {

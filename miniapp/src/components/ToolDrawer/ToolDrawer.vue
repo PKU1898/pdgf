@@ -80,10 +80,10 @@ defineExpose({ openPalette, closePalette });
 
 <template>
   <view class="fixed bottom-0 left-0 right-0 z-30">
-    <view v-if="expanded" class="absolute bottom-full left-0 right-0 bg-black/20" style="height: 100vh;" @tap="closePalette" />
+    <view v-if="expanded" class="absolute bottom-full left-0 right-0 bg-black bg-opacity-20" style="height: 100vh;" @tap="closePalette" />
 
-    <view class="relative bg-card rounded-t-panel shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-      <view v-if="expanded" class="px-page-x pt-4 pb-2 max-h-[40vh] overflow-y-auto">
+    <view class="relative bg-card rounded-t-panel" style="box-shadow: 0 -2px 10px rgba(0,0,0,0.05)">
+      <view v-if="expanded" class="px-page-x pt-4 pb-2 overflow-y-auto" style="max-height: 40vh">
         <view class="flex justify-between items-center mb-3">
           <text class="text-sm font-bold text-text-main">选择颜色</text>
           <text class="text-text-sub text-lg" @tap="closePalette">✕</text>

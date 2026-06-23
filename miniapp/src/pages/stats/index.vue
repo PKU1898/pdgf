@@ -157,7 +157,7 @@ onLoad(() => {
     </view>
 
     <!-- 缺口提醒 -->
-    <view v-if="useInventory && hasShortage" class="bg-error/10 mx-page-x mt-3 rounded-panel p-4">
+    <view v-if="useInventory && hasShortage" class="bg-error bg-opacity-10 mx-page-x mt-3 rounded-panel p-4">
       <text class="text-sm text-error font-bold block">库存缺口提醒</text>
       <view v-for="s in shortages" :key="s.colorId" class="mt-2">
         <text class="text-xs text-error">
@@ -211,10 +211,10 @@ onLoad(() => {
     <view v-if="colorStats.length > 0" class="bg-card mx-page-x mt-3 rounded-panel p-4">
       <text class="text-sm font-bold text-text-main mb-3 block">导出</text>
       <view class="flex gap-3">
-        <view class="flex-1 py-2.5 rounded-btn bg-primary text-center" @tap="onExportPng">
+        <view class="flex-1 py-2 rounded-btn bg-primary text-center" @tap="onExportPng">
           <text class="text-sm text-white">导出 PNG</text>
         </view>
-        <view class="flex-1 py-2.5 rounded-btn bg-bg text-center" @tap="onExportCsv">
+        <view class="flex-1 py-2 rounded-btn bg-bg text-center" @tap="onExportCsv">
           <text class="text-sm text-text-main">导出 CSV</text>
         </view>
       </view>

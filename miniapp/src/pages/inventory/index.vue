@@ -95,7 +95,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <view class="min-h-screen bg-bg pb-[120rpx]">
+  <view class="min-h-screen bg-bg" style="padding-bottom: 120rpx">
     <!-- 品牌 Tab -->
     <scroll-view scroll-x class="bg-card whitespace-nowrap border-b border-border-light" :show-scrollbar="false">
       <view class="flex items-center px-page-x py-3 gap-3">
@@ -158,7 +158,7 @@ onMounted(async () => {
     </view>
 
     <!-- 底部悬浮统计栏 -->
-    <view class="fixed bottom-0 left-0 right-0 bg-card shadow-[0_-2px_10px_rgba(0,0,0,0.05)] px-page-x py-3 flex items-center justify-between z-50">
+    <view class="fixed bottom-0 left-0 right-0 bg-card px-page-x py-3 flex items-center justify-between z-50" style="box-shadow: 0 -2px 10px rgba(0,0,0,0.05)">
       <text class="text-text-main text-sm">已选{{ selectedCount }}种，共{{ totalCount }}颗</text>
       <view
         class="px-6 py-2 text-white rounded-btn text-sm"

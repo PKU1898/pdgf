@@ -39,7 +39,7 @@ function onSelect(colorId: string): void {
 
 <template>
   <view class="fixed inset-0 z-40 flex flex-col justify-end">
-    <view class="absolute inset-0 bg-black/20" @tap="emit('close')" />
+    <view class="absolute inset-0 bg-black bg-opacity-20" @tap="emit('close')" />
     <view class="relative bg-card rounded-t-panel px-page-x py-4 pb-6 shadow-lg">
       <view class="flex justify-between items-center mb-3">
         <text class="text-sm font-bold text-text-main">选择颜色</text>

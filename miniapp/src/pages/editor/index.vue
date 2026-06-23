@@ -4,9 +4,9 @@ import { onLoad } from "@dcloudio/uni-app";
 import { useProjectStore } from "../../store/project";
 import { confirmAndUnlock } from "../../utils/rewardAd";
 import { request } from "../../api/request";
-import CanvasViewport from "../../components/CanvasViewport.vue";
-import BeadGrid from "../../components/BeadGrid.vue";
-import ToolDrawer from "../../components/ToolDrawer.vue";
+import CanvasViewport from "../../components/CanvasViewport/CanvasViewport.vue";
+import BeadGrid from "../../components/BeadGrid/BeadGrid.vue";
+import ToolDrawer from "../../components/ToolDrawer/ToolDrawer.vue";
 
 const store = useProjectStore();
 
@@ -264,27 +264,27 @@ function onMergeSliderChange(e: { detail: { value: number } }): void {
       <text class="text-base font-bold text-text-main truncate flex-1 mr-4">{{ store.name || "图纸" }}</text>
       <view class="flex gap-3 items-center">
         <view
-          class="px-4 py-1.5 rounded-btn text-sm"
-          :class="store.canUndo ? 'bg-bg text-text-main' : 'bg-bg/50 text-text-sub/50'"
+          class="px-4 py-1 rounded-btn text-sm"
+          :class="store.canUndo ? 'bg-bg text-text-main' : 'bg-bg bg-opacity-50 text-text-sub text-opacity-50'"
           @tap="store.canUndo && store.undo()"
         >
           <text>撤销</text>
         </view>
         <view
-          class="px-4 py-1.5 rounded-btn text-sm"
-          :class="store.canRedo ? 'bg-bg text-text-main' : 'bg-bg/50 text-text-sub/50'"
+          class="px-4 py-1 rounded-btn text-sm"
+          :class="store.canRedo ? 'bg-bg text-text-main' : 'bg-bg bg-opacity-50 text-text-sub text-opacity-50'"
           @tap="store.canRedo && store.redo()"
         >
           <text>重做</text>
         </view>
         <view
-          class="px-4 py-1.5 rounded-btn text-sm"
-          :class="store.saving ? 'bg-primary/50 text-white' : 'bg-primary text-white'"
+          class="px-4 py-1 rounded-btn text-sm"
+          :class="store.saving ? 'bg-primary bg-opacity-50 text-white' : 'bg-primary text-white'"
           @tap="onSave"
         >
           <text>{{ store.saving ? "保存中..." : "保存" }}</text>
         </view>
-        <view class="px-3 py-1.5 rounded-btn text-sm bg-bg text-text-main" @tap="openSettings">
+        <view class="px-3 py-1 rounded-btn text-sm bg-bg text-text-main" @tap="openSettings">
           <text>⚙️</text>
         </view>
       </view>
@@ -302,7 +302,7 @@ function onMergeSliderChange(e: { detail: { value: number } }): void {
       </CanvasViewport>
     </view>
 
-    <view v-if="store.loading" class="fixed inset-0 flex items-center justify-center bg-black/30 z-50">
+    <view v-if="store.loading" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
       <text class="text-white text-sm">加载中...</text>
     </view>
 
@@ -320,7 +320,7 @@ function onMergeSliderChange(e: { detail: { value: number } }): void {
     />
 
     <view v-if="showSettings" class="fixed inset-0 z-50 flex items-center justify-center">
-      <view class="absolute inset-0 bg-black/40" @tap="closeSettings" />
+      <view class="absolute inset-0 bg-black bg-opacity-40" @tap="closeSettings" />
       <view class="relative bg-card rounded-panel p-5 mx-8 w-full max-w-sm shadow-lg">
         <text class="text-lg font-bold text-text-main mb-4 block">画板设置</text>
 
@@ -356,7 +356,7 @@ function onMergeSliderChange(e: { detail: { value: number } }): void {
     </view>
 
     <view v-if="showDenoise" class="fixed inset-0 z-50 flex items-center justify-center">
-      <view class="absolute inset-0 bg-black/40" @tap="closeDenoise" />
+      <view class="absolute inset-0 bg-black bg-opacity-40" @tap="closeDenoise" />
       <view class="relative bg-card rounded-panel p-5 mx-8 w-full max-w-sm shadow-lg">
         <text class="text-lg font-bold text-text-main mb-4 block">像素去噪</text>
 
@@ -387,7 +387,7 @@ function onMergeSliderChange(e: { detail: { value: number } }): void {
     </view>
 
     <view v-if="showMerge" class="fixed inset-0 z-50 flex items-center justify-center">
-      <view class="absolute inset-0 bg-black/40" @tap="closeMerge" />
+      <view class="absolute inset-0 bg-black bg-opacity-40" @tap="closeMerge" />
       <view class="relative bg-card rounded-panel p-5 mx-8 w-full max-w-sm shadow-lg">
         <text class="text-lg font-bold text-text-main mb-4 block">色块融合</text>
 
