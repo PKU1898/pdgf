@@ -4,7 +4,6 @@ import { request } from "../api/request";
 import { floodFill } from "../utils/fillBucket";
 import { removeBackground } from "../utils/removeBackground";
 import { denoiseGrid } from "../utils/denoise";
-import { mergeGrid } from "../utils/merge";
 import {
   matchInventoryColors,
   type ColorInfo,
@@ -224,8 +223,55 @@ export const useProjectStore = defineStore("project", () => {
     return result.count;
   }
 
+  function mergeGridLocal(grid: string[][], strength: number): { grid: string[][]; count: number } | null {
+    const height = grid.length;
+    if (height === 0) return null;
+    const width = grid[0].length;
+    if (width === 0) return null;
+    const clamped = Math.max(0, Math.min(100, Math.round(strength)));
+    if (clamped === 0) return null;
+    const threshold = 1 + Math.ceil(clamped / (100 / 9));
+    if (threshold > 10) return null;
+    const newGrid: string[][] = grid.map((row) => [...row]);
+    let count = 0;
+    for (let r = 0; r < height; r++) {
+      for (let c = 0; c < width; c++) {
+        const current = grid[r][c];
+        if (!current) continue;
+        const freq = new Map<string, number>();
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            const nr = r + dr;
+            const nc = c + dc;
+            if (nr < 0 || nr >= height || nc < 0 || nc >= width) continue;
+            const color = grid[nr][nc];
+            if (!color) continue;
+            freq.set(color, (freq.get(color) ?? 0) + 1);
+          }
+        }
+        const centerCount = freq.get(current) ?? 0;
+        if (centerCount <= threshold) {
+          let maxColor = "";
+          let maxCount = 0;
+          for (const [color, cnt] of freq) {
+            if (cnt > maxCount) {
+              maxCount = cnt;
+              maxColor = color;
+            }
+          }
+          if (maxColor && maxColor !== current) {
+            newGrid[r][c] = maxColor;
+            count++;
+          }
+        }
+      }
+    }
+    if (count === 0) return null;
+    return { grid: newGrid, count };
+  }
+
   function merge(strength: number): number {
-    const result = mergeGrid(gridData.value, strength);
+    const result = mergeGridLocal(gridData.value, strength);
     if (!result) return 0;
     pushSnapshot();
     gridData.value = result.grid;
