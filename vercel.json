@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "server/src/app.ts",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": ["server/prisma/**"]
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "server/src/app.ts"
+    }
+  ],
+  "installCommand": "cd server && pnpm install && npx prisma generate",
+  "framework": null
+}
