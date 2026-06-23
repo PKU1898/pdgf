@@ -3,9 +3,102 @@ import { ref, computed } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
 import { useProjectStore } from "../../store/project";
 import { useInventoryStore } from "../../store/inventory";
-import { countGridColors } from "../../utils/countGridColors";
-import { exportPng, exportCsv } from "../../utils/exportFile";
+import { renderToImage } from "../../utils/canvasRenderer";
 import type { Shortage } from "../../utils/inventoryMatch";
+
+interface ColorCount {
+  colorId: string;
+  count: number;
+}
+
+function countGridColors(gridData: string[][]): ColorCount[] {
+  const counts = new Map<string, number>();
+  for (const row of gridData) {
+    for (const cell of row) {
+      if (cell) {
+        counts.set(cell, (counts.get(cell) ?? 0) + 1);
+      }
+    }
+  }
+  const result: ColorCount[] = [];
+  for (const [colorId, count] of counts) {
+    result.push({ colorId, count });
+  }
+  result.sort((a, b) => b.count - a.count);
+  return result;
+}
+
+function getTimestamp(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  const h = String(now.getHours()).padStart(2, "0");
+  const min = String(now.getMinutes()).padStart(2, "0");
+  const s = String(now.getSeconds()).padStart(2, "0");
+  return `${y}${m}${d}_${h}${min}${s}`;
+}
+
+async function exportPng(
+  renderOptions: { gridData: string[][]; colorMap: Record<string, string>; colorCodes: Record<string, string> },
+  projectName: string
+): Promise<boolean> {
+  try {
+    const tempPath = renderToImage(renderOptions);
+    await new Promise<void>((resolve, reject) => {
+      uni.saveImageToPhotosAlbum({
+        filePath: tempPath,
+        success: () => resolve(),
+        fail: (err) => reject(err),
+      });
+    });
+    const filename = `${projectName}_${getTimestamp()}.png`;
+    uni.showToast({ title: `已保存: ${filename}`, icon: "success" });
+    return true;
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "保存失败";
+    console.error("[exportPng]", message);
+    uni.showToast({ title: "保存失败", icon: "none" });
+    return false;
+  }
+}
+
+function exportCsv(
+  projectName: string,
+  gridData: string[][],
+  colorCodes: Record<string, string>,
+  colorNames: Record<string, string>
+): boolean {
+  try {
+    const counts = countGridColors(gridData);
+    const rows = counts.map((item) => ({
+      code: colorCodes[item.colorId] ?? item.colorId.split("_").pop() ?? item.colorId,
+      name: colorNames[item.colorId] ?? "",
+      count: item.count,
+    }));
+    const lines = ["色号,颜色名,所需数量"];
+    for (const row of rows) {
+      const escapedName = row.name.includes(",") ? `"${row.name}"` : row.name;
+      lines.push(`${row.code},${escapedName},${row.count}`);
+    }
+    const csvContent = lines.join("\n");
+    const filename = `${projectName}_${getTimestamp()}.csv`;
+    const filePath = `${wx.env.USER_DATA_PATH}/${filename}`;
+    const fs = uni.getFileSystemManager();
+    fs.writeFileSync(filePath, csvContent, "utf8");
+    uni.shareFileMessage({
+      filePath,
+      success: () => { uni.showToast({ title: "导出成功", icon: "success" }); },
+      fail: () => { uni.showToast({ title: "已保存到本地", icon: "success" }); },
+    });
+    return true;
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "导出失败";
+    console.error("[exportCsv]", message);
+    uni.showToast({ title: "导出失败", icon: "none" });
+    return false;
+  }
+}
 
 const projectStore = useProjectStore();
 const inventoryStore = useInventoryStore();
